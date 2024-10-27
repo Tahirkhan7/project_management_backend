@@ -16,7 +16,7 @@ router.put("/addMember/:id", async (req, res) => {
     if (!board) {
       return res.status(404).json({ message: "Board not found" });
     } else if (board.members.includes(email)) {
-      return res.status(400).json({ message: "Email is already a member" });
+      return res.status(400).json({ message: "User is already a member" });
     } else {
       const updateBoard = await Board.findByIdAndUpdate(
         id,
@@ -25,7 +25,7 @@ router.put("/addMember/:id", async (req, res) => {
       );
       res
         .status(200)
-        .json({ message: "Email added to members successfully", updateBoard });
+        .json({ message: "User added to Board successfully", updateBoard });
     }
   } catch (error) {
     res.status(400).json({ message: "Error updating board", error });

@@ -8,9 +8,14 @@ const { Board } = require("../schema/board.schema");
 dotenv.config();
 
 router.get("/", async (req, res) => {
-  const users = await User.find().select(" -password -createdAt -__v");
+  const { email } = req.query; 
+  const users = await User.find({ email: { $ne: email } }).select("-password -createdAt -__v");
+  if (!users) {
+    return res.status(400).json({ message: "No Users found!" });
+  }
   res.status(200).json(users);
 });
+
 
 router.post("/login", async (req, res) => {
   const { email, password } = req.body;

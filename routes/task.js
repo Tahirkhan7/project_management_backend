@@ -10,26 +10,38 @@ const { Task } = require("../schema/task.schema");
 dotenv.config();
 
 router.get("/all", async (req, res) => {
-    const { email } = req.query;
-  
-    if (!email) {
-      return res.status(400).json({ message: "Email is required!" });
+  const { email } = req.query;
+
+  if (!email) {
+    return res.status(400).json({ message: "Email is required!" });
+  }
+
+  try {
+    const boards = await Board.find({
+      $or: [{ members: email }, { owner: email }],
+    });
+
+    if (boards.length === 0) {
+      return res
+        .status(404)
+        .json({ message: "No boards found for this user!" });
     }
-  
-    try {
-      const tasks = await Task.find({ assignedTo: email });
-  
-      if (tasks.length > 0) {
-        res.status(200).json(tasks);
-      } else {
-        res.status(404).json({ message: "No tasks found!" });
-      }
-    } catch (error) {
-      res.status(500).json({ message: "Error fetching tasks", error });
+
+    const boardIds = boards.map((board) => board._id);
+
+    const tasks = await Task.find({
+      $or: [{ assignedTo: email }, { boardId: { $in: boardIds } }],
+    });
+
+    if (tasks.length > 0) {
+      res.status(200).json(tasks);
+    } else {
+      res.status(404).json({ message: "No tasks found!" });
     }
-  });
-  
-  
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching tasks", error });
+  }
+});
 
 router.post("/add", async (req, res) => {
   const { title, priority, assignedTo, checklist, dueDate, category, boardId } =
@@ -83,6 +95,20 @@ router.get("/:id", async (req, res) => {
     res.status(200).json(task);
   } catch (error) {
     res.status(400).json({ message: "Error fetching task", error });
+  }
+});
+
+router.delete("/delete/:id", async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const task = await Task.findByIdAndDelete(id);
+    if (!task) {
+      return res.status(404).json({ message: "Task not found" });
+    }
+    res.status(200).json({ message: "Task deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ message: "Error deleting task", error });
   }
 });
 
